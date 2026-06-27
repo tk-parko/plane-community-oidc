@@ -74,6 +74,9 @@ class AuthentikCallbackSpaceEndpoint(View):
             url = f"{base_host(request=request, is_space=True)}?{urlencode(params)}"
             return HttpResponseRedirect(url)
 
+        if "state" in request.session:
+            del request.session["state"]
+
         if not code:
             exc = AuthenticationException(
                 error_code=AUTHENTICATION_ERROR_CODES["AUTHENTIK_OAUTH_PROVIDER_ERROR"],

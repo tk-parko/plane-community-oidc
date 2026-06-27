@@ -55,7 +55,12 @@ class AuthentikOAuthProvider(OauthAdapter):
             )
 
         parsed = urlparse(AUTHENTIK_HOST)
-        if not parsed.scheme or parsed.scheme not in ("https", "http"):
+        if not parsed.scheme:
+            raise AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["AUTHENTIK_NOT_CONFIGURED"],
+                error_message="AUTHENTIK_NOT_CONFIGURED",
+            )
+        if parsed.hostname and parsed.hostname not in ("localhost", "127.0.0.1", "0.0.0.0") and parsed.scheme != "https":
             raise AuthenticationException(
                 error_code=AUTHENTICATION_ERROR_CODES["AUTHENTIK_NOT_CONFIGURED"],
                 error_message="AUTHENTIK_NOT_CONFIGURED",
@@ -79,7 +84,9 @@ class AuthentikOAuthProvider(OauthAdapter):
         client_id = AUTHENTIK_CLIENT_ID
         client_secret = AUTHENTIK_CLIENT_SECRET
 
-        redirect_uri = f"{'https' if request.is_secure() else 'http'}://{request.get_host()}/auth/authentik/callback/"
+        forwarded_proto = request.META.get("HTTP_X_FORWARDED_PROTO", "")
+        is_secure = forwarded_proto == "https" or request.is_secure()
+        redirect_uri = f"{'https' if is_secure else 'http'}://{request.get_host()}/auth/authentik/callback/"
         url_params = {
             "client_id": client_id,
             "scope": self.scope,
@@ -140,8 +147,10 @@ class AuthentikOAuthProvider(OauthAdapter):
                     "provider_id": user_info_response.get("sub"),
                     "email": user_info_response.get("email"),
                     "avatar": user_info_response.get("picture"),
-                    "first_name": user_info_response.get("given_name") or user_info_response.get("name", ""),
-                    "last_name": user_info_response.get("family_name", ""),
+                    "first_name": user_info_response.get("given_name")
+                        or (user_info_response.get("name", "").split(" ", 1)[0] if user_info_response.get("name") else ""),
+                    "last_name": user_info_response.get("family_name")
+                        or (user_info_response.get("name", "").split(" ", 1)[1] if user_info_response.get("name") and " " in user_info_response.get("name", "") else ""),
                     "is_password_autoset": True,
                 },
             }

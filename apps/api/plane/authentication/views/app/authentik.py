@@ -62,7 +62,7 @@ class AuthentikCallbackEndpoint(View):
     def get(self, request):
         code = request.GET.get("code")
         state = request.GET.get("state")
-        base_host = request.session.get("host") or base_host(request=request, is_app=True)
+        host = request.session.get("host") or base_host(request=request, is_app=True)
         next_path = request.session.get("next_path")
 
         if state != request.session.get("state", ""):
@@ -73,7 +73,7 @@ class AuthentikCallbackEndpoint(View):
             params = exc.get_error_dict()
             if next_path:
                 params["next_path"] = str(validate_next_path(next_path))
-            url = urljoin(base_host, "?" + urlencode(params))
+            url = urljoin(host, "?" + urlencode(params))
             return HttpResponseRedirect(url)
 
         if "state" in request.session:
@@ -87,7 +87,7 @@ class AuthentikCallbackEndpoint(View):
             params = exc.get_error_dict()
             if next_path:
                 params["next_path"] = str(validate_next_path(next_path))
-            url = urljoin(base_host, "?" + urlencode(params))
+            url = urljoin(host, "?" + urlencode(params))
             return HttpResponseRedirect(url)
 
         try:
@@ -101,11 +101,11 @@ class AuthentikCallbackEndpoint(View):
             else:
                 path = get_redirection_path(user=user)
             # redirect to referer path
-            url = urljoin(base_host, path)
+            url = urljoin(host, path)
             return HttpResponseRedirect(url)
         except AuthenticationException as e:
             params = e.get_error_dict()
             if next_path:
                 params["next_path"] = str(validate_next_path(next_path))
-            url = urljoin(base_host, "?" + urlencode(params))
+            url = urljoin(host, "?" + urlencode(params))
             return HttpResponseRedirect(url)

@@ -7,8 +7,8 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import ICU from "i18next-icu";
-import resourcesToBackend from "i18next-resources-to-backend";
 import { SUPPORTED_LANGUAGES, FALLBACK_LANGUAGE, LANGUAGE_STORAGE_KEY } from "../constants/language";
+import { resources } from "../locales/resources";
 import { NAMESPACES, DEFAULT_NAMESPACE } from "../constants/namespaces";
 
 import type { i18n as I18nInstance } from "i18next";
@@ -17,8 +17,7 @@ export const i18nInstance: I18nInstance = i18n.createInstance();
 
 i18nInstance
   .use(ICU)
-  .use(initReactI18next)
-  .use(resourcesToBackend((language: string, namespace: string) => import(`../locales/${language}/${namespace}.json`)));
+  .use(initReactI18next);
 
 const initialLng =
   typeof window !== "undefined" ? localStorage.getItem(LANGUAGE_STORAGE_KEY) || FALLBACK_LANGUAGE : FALLBACK_LANGUAGE;
@@ -33,7 +32,8 @@ export const initPromise = i18nInstance
     // fallbackNS ensures all namespaces are searched for any key, so components
     // don't need to pass NAMESPACES to useTranslation (which triggers re-render cascades).
     fallbackNS: NAMESPACES.filter((ns) => ns !== DEFAULT_NAMESPACE),
-    partialBundledLanguages: true,
+    resources,
+    partialBundledLanguages: false,
     keySeparator: ".",
     nsSeparator: false,
     interpolation: { escapeValue: false },
